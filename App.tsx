@@ -5,6 +5,29 @@ import { SYSTEM_INSTRUCTION, MODEL_NAME, VOICE_NAME } from './constants';
 import { createPcmBlob, base64ToBytes, decodeAudioData } from './utils/audioUtils';
 import Visualizer from './components/Visualizer';
 
+// Helper to safely get the API key in both Vite (Browser) and Node (Playground) environments
+const getApiKey = (): string => {
+  try {
+    // Check for Vite environment variable
+    if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_KEY) {
+      return (import.meta as any).env.VITE_API_KEY;
+    }
+  } catch (e) {
+    // Ignore error if import.meta is not supported
+  }
+  
+  try {
+    // Check for Node/Process environment variable
+    if (typeof process !== 'undefined' && process.env?.API_KEY) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {
+    // Ignore error if process is not defined
+  }
+  
+  return '';
+};
+
 const App: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +79,12 @@ const App: React.FC = () => {
     setError(null);
     addLog("Inicializando conexión...");
 
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        setError("API Key no encontrada. Verifica VITE_API_KEY en Cloudflare.");
+        return;
+    }
+
     try {
       // 1. Setup Audio Contexts
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -70,7 +99,7 @@ const App: React.FC = () => {
       addLog("Micrófono accedido correctamente.");
 
       // 3. Initialize Gemini Client
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      const ai = new GoogleGenAI({ apiKey });
 
       // 4. Connect to Live Session
       const sessionPromise = ai.live.connect({
