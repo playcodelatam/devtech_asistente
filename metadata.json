@@ -1,0 +1,7 @@
+{
+  "name": "DevTech AI Consultant",
+  "description": "A conversational voice agent for DevTech, specializing in business automation auditing and upskilling.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
