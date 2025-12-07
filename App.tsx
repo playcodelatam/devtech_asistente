@@ -326,9 +326,9 @@ const App: React.FC = () => {
                 <div className="mt-6 border-t border-slate-700 pt-4 h-24 overflow-hidden">
                     <div className="text-xs text-slate-500 font-mono space-y-1">
                         {logs.map((log, i) => (
-                            <div key={i} className="truncate">> {log}</div>
+                            <div key={i} className="truncate">&gt; {log}</div>
                         ))}
-                        {logs.length === 0 && <div className="opacity-50">> Esperando conexión...</div>}
+                        {logs.length === 0 && <div className="opacity-50">&gt; Esperando conexión...</div>}
                     </div>
                 </div>
             </div>
