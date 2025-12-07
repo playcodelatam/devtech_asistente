@@ -66,9 +66,8 @@ const OrbVisualizer: React.FC<OrbVisualizerProps> = ({
     let time = 0;
 
     const animate = () => {
-      // Semi-transparent clear for trail effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.fillRect(0, 0, orbSize, orbSize);
+      // Clear canvas
+      ctx.clearRect(0, 0, orbSize, orbSize);
       
       // Breathing pulse (slow in rest, fast when speaking)
       const breathSpeed = isSpeaking ? 0.08 : 0.02;
@@ -86,9 +85,7 @@ const OrbVisualizer: React.FC<OrbVisualizerProps> = ({
           ? Math.sin(time * 5 + filament.turbulence * 10) * 0.3
           : Math.sin(time * 0.5 + filament.turbulence * 2) * 0.05;
 
-        // Draw filament as connected curves
-        ctx.beginPath();
-        
+        // Calculate fog cloud positions
         filament.points.forEach((point, i) => {
           // Spiral motion with turbulence
           const spiralAngle = point.angle + filament.phase;
@@ -102,54 +99,48 @@ const OrbVisualizer: React.FC<OrbVisualizerProps> = ({
           point.x = spiralRadius * Math.cos(spiralAngle) * Math.cos(rotZ);
           point.y = spiralRadius * Math.sin(spiralAngle) + turbulence * radius * 0.3;
           point.z = spiralRadius * Math.sin(rotZ) * Math.cos(rotY);
-          
+        });
+
+        // Color selection with iridescence
+        let color;
+        const colorPhase = (time + filament.color) % 5;
+        
+        if (colorPhase < 1) {
+          color = { r: 6, g: 182, b: 212 }; // Cyan
+        } else if (colorPhase < 2) {
+          color = { r: 14, g: 165, b: 233 }; // Electric Blue
+        } else if (colorPhase < 3) {
+          color = { r: 59, g: 130, b: 246 }; // Cobalt Blue
+        } else if (colorPhase < 4) {
+          color = { r: 99, g: 102, b: 241 }; // Indigo
+        } else {
+          color = { r: 139, g: 92, b: 246 }; // Purple/Violet
+        }
+
+        // Draw fog clouds at each point
+        filament.points.forEach((point, i) => {
           // Project to 2D with perspective
           const perspective = 1 + point.z / (radius * 2);
           const screenX = centerX + point.x * perspective;
           const screenY = centerY + point.y * perspective;
           
-          if (i === 0) {
-            ctx.moveTo(screenX, screenY);
-          } else {
-            ctx.lineTo(screenX, screenY);
-          }
+          // Fog size based on depth and state
+          const fogSize = (isSpeaking ? 35 : 25) * perspective;
+          const opacity = isActive ? (0.15 + perspective * 0.1) : 0.05;
+          
+          // Create radial gradient for fog
+          const fogGradient = ctx.createRadialGradient(
+            screenX, screenY, 0,
+            screenX, screenY, fogSize
+          );
+          
+          fogGradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`);
+          fogGradient.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.5})`);
+          fogGradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+          
+          ctx.fillStyle = fogGradient;
+          ctx.fillRect(screenX - fogSize, screenY - fogSize, fogSize * 2, fogSize * 2);
         });
-
-        // Color selection with iridescence
-        let color, glowColor;
-        const colorPhase = (time + filament.color) % 5;
-        
-        if (colorPhase < 1) {
-          color = `rgba(6, 182, 212, ${isActive ? 0.7 : 0.3})`; // Cyan
-          glowColor = 'rgba(6, 182, 212, 0.8)';
-        } else if (colorPhase < 2) {
-          color = `rgba(14, 165, 233, ${isActive ? 0.8 : 0.3})`; // Electric Blue
-          glowColor = 'rgba(14, 165, 233, 1)';
-        } else if (colorPhase < 3) {
-          color = `rgba(59, 130, 246, ${isActive ? 0.7 : 0.3})`; // Cobalt Blue
-          glowColor = 'rgba(59, 130, 246, 0.9)';
-        } else if (colorPhase < 4) {
-          color = `rgba(99, 102, 241, ${isActive ? 0.6 : 0.3})`; // Indigo
-          glowColor = 'rgba(99, 102, 241, 0.8)';
-        } else {
-          color = `rgba(139, 92, 246, ${isActive ? 0.6 : 0.3})`; // Purple/Violet
-          glowColor = 'rgba(139, 92, 246, 0.7)';
-        }
-
-        // Draw with glow
-        ctx.strokeStyle = color;
-        ctx.lineWidth = isSpeaking ? 2.5 : 1.5;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        
-        // Intense glow when speaking
-        if (isActive) {
-          ctx.shadowBlur = isSpeaking ? 25 : 12;
-          ctx.shadowColor = glowColor;
-        }
-        
-        ctx.stroke();
-        ctx.shadowBlur = 0;
       });
 
       // Central core glow
