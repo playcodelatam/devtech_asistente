@@ -152,6 +152,19 @@ const App: React.FC = () => {
                 return;
             }
 
+            // Check for "hasta luego" in text response
+            const textParts = message.serverContent?.modelTurn?.parts?.filter(p => p.text);
+            if (textParts && textParts.length > 0) {
+                const fullText = textParts.map(p => p.text).join(' ').toLowerCase();
+                if (fullText.includes('hasta luego') || fullText.includes('adiós') || fullText.includes('adios')) {
+                    addLog("Despedida detectada. Cerrando sesión...");
+                    // Disconnect after audio finishes
+                    setTimeout(() => {
+                        handleDisconnect();
+                    }, 3000); // Wait 3 seconds for audio to finish
+                }
+            }
+
             // Handle Audio Output
             const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (base64Audio && outputAudioContextRef.current && outputNodeRef.current) {
