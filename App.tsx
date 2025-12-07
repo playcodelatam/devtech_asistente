@@ -70,7 +70,11 @@ const App: React.FC = () => {
       addLog("Micrófono accedido correctamente.");
 
       // 3. Initialize Gemini Client
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY no está configurada. Configúrala en Cloudflare Pages.');
+      }
+      const ai = new GoogleGenAI({ apiKey });
 
       // 4. Connect to Live Session
       const sessionPromise = ai.live.connect({

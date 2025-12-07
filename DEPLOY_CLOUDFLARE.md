@@ -42,9 +42,11 @@ Usa la siguiente configuración:
 
 1. En la sección **Environment variables**, click en **Add variable**
 2. Agrega:
-   - **Variable name**: `GEMINI_API_KEY`
+   - **Variable name**: `GEMINI_API_KEY` (sin prefijo VITE_)
    - **Value**: Tu API key de Google Gemini
 3. Click en **Save and Deploy**
+
+⚠️ **Importante**: En Cloudflare Pages usa `GEMINI_API_KEY` (sin VITE_). El prefijo VITE_ solo es para desarrollo local.
 
 ### Paso 6: Esperar el despliegue
 

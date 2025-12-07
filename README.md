@@ -40,7 +40,7 @@ vercel
 
 2. Configurar variable de entorno:
    - Crea archivo `.env.local`
-   - Agrega: `GEMINI_API_KEY=tu_api_key_aqui`
+   - Agrega: `VITE_GEMINI_API_KEY=tu_api_key_aqui`
    - Obtén tu API key en: https://aistudio.google.com
 
 3. Ejecutar en desarrollo:
