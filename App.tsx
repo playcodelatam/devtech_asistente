@@ -46,8 +46,6 @@ const App: React.FC = () => {
   const sessionRef = useRef<any>(null);
   const nextStartTimeRef = useRef<number>(0);
   const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
-  const goodbyeDetectedRef = useRef<boolean>(false);
-  const disconnectTimeoutRef = useRef<number | null>(null);
 
   const addLog = (msg: string) => {
     setLogs(prev => [...prev.slice(-4), msg]);
@@ -77,11 +75,6 @@ const App: React.FC = () => {
     activeSourcesRef.current.forEach(source => source.stop());
     activeSourcesRef.current.clear();
     setAiSpeaking(false);
-    goodbyeDetectedRef.current = false;
-    if (disconnectTimeoutRef.current) {
-      clearTimeout(disconnectTimeoutRef.current);
-      disconnectTimeoutRef.current = null;
-    }
   }, []);
 
   const handleDisconnect = useCallback(() => {
@@ -166,29 +159,6 @@ const App: React.FC = () => {
                 nextStartTimeRef.current = 0;
                 setAiSpeaking(false);
                 return;
-            }
-
-            // Check for "hasta luego" in text response
-            const textParts = message.serverContent?.modelTurn?.parts?.filter(p => p.text);
-            if (textParts && textParts.length > 0 && !goodbyeDetectedRef.current) {
-                const fullText = textParts.map(p => p.text).join(' ').toLowerCase();
-                if (fullText.includes('hasta luego') || fullText.includes('adiós') || fullText.includes('adios') || fullText.includes('chao')) {
-                    goodbyeDetectedRef.current = true;
-                    addLog("Despedida detectada. Cerrando sesión...");
-                    
-                    // Clear any existing timeout
-                    if (disconnectTimeoutRef.current) {
-                        clearTimeout(disconnectTimeoutRef.current);
-                    }
-                    
-                    // Disconnect after audio finishes
-                    disconnectTimeoutRef.current = window.setTimeout(() => {
-                        if (sessionRef.current) {
-                            addLog("Desconectando automáticamente...");
-                            handleDisconnect();
-                        }
-                    }, 4000); // Wait 4 seconds for audio to finish
-                }
             }
 
             // Handle Audio Output
