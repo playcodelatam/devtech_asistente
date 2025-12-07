@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DevTech AI Consultant</title>
+    <!-- Tailwind CDN used for simplicity in this setup. For a production app, configuring PostCSS is recommended but this works immediately. -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -36,16 +37,18 @@
   <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
     "react": "https://aistudiocdn.com/react@^19.2.1",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0"
   }
 }
 </script>
 </head>
   <body class="bg-slate-900 text-slate-100 antialiased">
     <div id="root"></div>
+    <!-- CRITICAL: This line connects HTML to your React code in Vite -->
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
