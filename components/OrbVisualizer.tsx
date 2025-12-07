@@ -6,6 +6,14 @@ interface OrbVisualizerProps {
   size?: 'normal' | 'large';
 }
 
+interface Filament {
+  points: { x: number; y: number; z: number; angle: number; radius: number }[];
+  color: number;
+  speed: number;
+  turbulence: number;
+  phase: number;
+}
+
 const OrbVisualizer: React.FC<OrbVisualizerProps> = ({ 
   isActive, 
   isSpeaking,
@@ -13,7 +21,7 @@ const OrbVisualizer: React.FC<OrbVisualizerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
-  const particlesRef = useRef<any[]>([]);
+  const filamentsRef = useRef<Filament[]>([]);
   
   const orbSize = size === 'large' ? 256 : 128;
   const containerSize = size === 'large' ? 'w-64 h-64' : 'w-32 h-32';
@@ -26,7 +34,6 @@ const OrbVisualizer: React.FC<OrbVisualizerProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
     canvas.width = orbSize;
     canvas.height = orbSize;
 
@@ -34,74 +41,140 @@ const OrbVisualizer: React.FC<OrbVisualizerProps> = ({
     const centerY = orbSize / 2;
     const radius = orbSize / 2.5;
 
-    // Create particles
-    const particleCount = size === 'large' ? 150 : 100;
-    particlesRef.current = Array.from({ length: particleCount }, () => {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const r = radius * (0.7 + Math.random() * 0.3);
+    // Create flowing filaments
+    const filamentCount = size === 'large' ? 25 : 18;
+    filamentsRef.current = Array.from({ length: filamentCount }, () => {
+      const pointCount = 40;
+      const baseAngle = Math.random() * Math.PI * 2;
+      const baseRadius = radius * (0.3 + Math.random() * 0.5);
       
       return {
-        theta,
-        phi,
-        r,
-        baseR: r,
-        speed: 0.001 + Math.random() * 0.002,
-        size: 1 + Math.random() * 2,
-        brightness: 0.5 + Math.random() * 0.5,
-        color: Math.floor(Math.random() * 4), // 0: cyan, 1: blue, 2: purple, 3: pink
-        pulseOffset: Math.random() * Math.PI * 2,
+        points: Array.from({ length: pointCount }, (_, i) => ({
+          x: 0,
+          y: 0,
+          z: 0,
+          angle: baseAngle + (i / pointCount) * Math.PI * 4,
+          radius: baseRadius + Math.sin(i * 0.3) * radius * 0.2,
+        })),
+        color: Math.floor(Math.random() * 5), // 0-4 for color variety
+        speed: 0.005 + Math.random() * 0.01,
+        turbulence: Math.random(),
+        phase: Math.random() * Math.PI * 2,
       };
     });
 
     let time = 0;
 
     const animate = () => {
-      ctx.clearRect(0, 0, orbSize, orbSize);
-      time += 0.01;
+      // Semi-transparent clear for trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, orbSize, orbSize);
+      
+      // Breathing pulse (slow in rest, fast when speaking)
+      const breathSpeed = isSpeaking ? 0.08 : 0.02;
+      const breathIntensity = isSpeaking ? 0.25 : 0.08;
+      time += breathSpeed;
+      
+      const globalPulse = 1 + Math.sin(time) * breathIntensity;
 
-      // Draw particles
-      particlesRef.current.forEach((particle) => {
-        // Rotate particle
-        particle.theta += particle.speed;
+      filamentsRef.current.forEach((filament) => {
+        // Update filament phase
+        filament.phase += filament.speed * (isSpeaking ? 3 : 1);
         
-        // Pulse effect when speaking
-        const pulse = isSpeaking ? Math.sin(time * 3 + particle.pulseOffset) * 0.15 : 0;
-        particle.r = particle.baseR * (1 + pulse);
+        // Turbulence when speaking
+        const turbulence = isSpeaking 
+          ? Math.sin(time * 5 + filament.turbulence * 10) * 0.3
+          : Math.sin(time * 0.5 + filament.turbulence * 2) * 0.05;
 
-        // Convert spherical to cartesian coordinates
-        const x = centerX + particle.r * Math.sin(particle.phi) * Math.cos(particle.theta);
-        const y = centerY + particle.r * Math.sin(particle.phi) * Math.sin(particle.theta);
-        const z = particle.r * Math.cos(particle.phi);
-
-        // Calculate depth for 3D effect
-        const scale = (z + radius) / (radius * 2);
-        const alpha = isActive ? particle.brightness * scale : 0.3 * scale;
-
-        // Color based on particle type
-        let color;
-        switch (particle.color) {
-          case 0: color = `rgba(6, 182, 212, ${alpha})`; break; // cyan
-          case 1: color = `rgba(59, 130, 246, ${alpha})`; break; // blue
-          case 2: color = `rgba(139, 92, 246, ${alpha})`; break; // purple
-          case 3: color = `rgba(236, 72, 153, ${alpha})`; break; // pink
-          default: color = `rgba(59, 130, 246, ${alpha})`;
-        }
-
-        // Draw particle
+        // Draw filament as connected curves
         ctx.beginPath();
-        ctx.arc(x, y, particle.size * scale, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
+        
+        filament.points.forEach((point, i) => {
+          // Spiral motion with turbulence
+          const spiralAngle = point.angle + filament.phase;
+          const spiralRadius = point.radius * globalPulse;
+          
+          // 3D rotation
+          const rotY = spiralAngle + time * 0.3;
+          const rotZ = Math.sin(time * 0.2 + i * 0.1) * 0.5;
+          
+          // Calculate 3D position
+          point.x = spiralRadius * Math.cos(spiralAngle) * Math.cos(rotZ);
+          point.y = spiralRadius * Math.sin(spiralAngle) + turbulence * radius * 0.3;
+          point.z = spiralRadius * Math.sin(rotZ) * Math.cos(rotY);
+          
+          // Project to 2D with perspective
+          const perspective = 1 + point.z / (radius * 2);
+          const screenX = centerX + point.x * perspective;
+          const screenY = centerY + point.y * perspective;
+          
+          if (i === 0) {
+            ctx.moveTo(screenX, screenY);
+          } else {
+            ctx.lineTo(screenX, screenY);
+          }
+        });
 
-        // Add glow when active
-        if (isActive && isSpeaking) {
-          ctx.shadowBlur = 10 * scale;
-          ctx.shadowColor = color;
-          ctx.fill();
-          ctx.shadowBlur = 0;
+        // Color selection with iridescence
+        let color, glowColor;
+        const colorPhase = (time + filament.color) % 5;
+        
+        if (colorPhase < 1) {
+          color = `rgba(6, 182, 212, ${isActive ? 0.7 : 0.3})`; // Cyan
+          glowColor = 'rgba(6, 182, 212, 0.8)';
+        } else if (colorPhase < 2) {
+          color = `rgba(14, 165, 233, ${isActive ? 0.8 : 0.3})`; // Electric Blue
+          glowColor = 'rgba(14, 165, 233, 1)';
+        } else if (colorPhase < 3) {
+          color = `rgba(59, 130, 246, ${isActive ? 0.7 : 0.3})`; // Cobalt Blue
+          glowColor = 'rgba(59, 130, 246, 0.9)';
+        } else if (colorPhase < 4) {
+          color = `rgba(99, 102, 241, ${isActive ? 0.6 : 0.3})`; // Indigo
+          glowColor = 'rgba(99, 102, 241, 0.8)';
+        } else {
+          color = `rgba(139, 92, 246, ${isActive ? 0.6 : 0.3})`; // Purple/Violet
+          glowColor = 'rgba(139, 92, 246, 0.7)';
         }
+
+        // Draw with glow
+        ctx.strokeStyle = color;
+        ctx.lineWidth = isSpeaking ? 2.5 : 1.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Intense glow when speaking
+        if (isActive) {
+          ctx.shadowBlur = isSpeaking ? 25 : 12;
+          ctx.shadowColor = glowColor;
+        }
+        
+        ctx.stroke();
+        ctx.shadowBlur = 0;
       });
+
+      // Central core glow
+      const coreGlow = ctx.createRadialGradient(
+        centerX, centerY, 0,
+        centerX, centerY, radius * 0.6
+      );
+      
+      if (isActive) {
+        if (isSpeaking) {
+          coreGlow.addColorStop(0, 'rgba(14, 165, 233, 0.4)');
+          coreGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
+          coreGlow.addColorStop(1, 'rgba(139, 92, 246, 0)');
+        } else {
+          coreGlow.addColorStop(0, 'rgba(14, 165, 233, 0.2)');
+          coreGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.1)');
+          coreGlow.addColorStop(1, 'rgba(99, 102, 241, 0)');
+        }
+      } else {
+        coreGlow.addColorStop(0, 'rgba(100, 116, 139, 0.15)');
+        coreGlow.addColorStop(1, 'rgba(51, 65, 85, 0)');
+      }
+      
+      ctx.fillStyle = coreGlow;
+      ctx.fillRect(0, 0, orbSize, orbSize);
 
       animationRef.current = requestAnimationFrame(animate);
     };
