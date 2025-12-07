@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { Mic, MicOff, Server, Users, Bot, StopCircle, CheckCircle2, Terminal } from 'lucide-react';
+import { Mic, MicOff, Server, Users, Bot, StopCircle, CheckCircle2, Terminal, Maximize2, Minimize2 } from 'lucide-react';
 import { MODEL_NAME, VOICE_NAME } from './constants';
 import { createPcmBlob, base64ToBytes, decodeAudioData } from './utils/audioUtils';
 import { getSystemInstruction } from './utils/systemInstruction';
-import Visualizer from './components/Visualizer';
+import OrbVisualizer from './components/OrbVisualizer';
 
 // Helper to safely get the API key in both Vite (Browser) and Node (Playground) environments
 const getApiKey = (): string => {
@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [aiSpeaking, setAiSpeaking] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Refs for audio handling to avoid re-renders
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -307,10 +308,19 @@ const App: React.FC = () => {
         {/* Right Column: Interaction Control */}
         <div className="lg:col-span-1">
             <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl sticky top-24 flex flex-col h-[400px]">
+                {/* Fullscreen button */}
+                <button
+                    onClick={() => setIsFullscreen(!isFullscreen)}
+                    className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"
+                    title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                >
+                    {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                </button>
+
                 <div className="flex-1 flex flex-col items-center justify-center space-y-8 relative">
                     
                     {/* Visualizer */}
-                    <Visualizer isActive={isConnected} isSpeaking={aiSpeaking} />
+                    <OrbVisualizer isActive={isConnected} isSpeaking={aiSpeaking} size="normal" />
                     
                     {/* Status Text */}
                     <div className="text-center space-y-1 z-10">
@@ -362,6 +372,72 @@ const App: React.FC = () => {
         </div>
 
       </main>
+
+      {/* Fullscreen Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center">
+          {/* Close button */}
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="absolute top-8 right-8 p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors shadow-lg"
+            title="Salir de pantalla completa"
+          >
+            <Minimize2 size={24} />
+          </button>
+
+          {/* Large Orb */}
+          <div className="flex flex-col items-center justify-center space-y-12">
+            <OrbVisualizer isActive={isConnected} isSpeaking={aiSpeaking} size="large" />
+            
+            {/* Status Text */}
+            <div className="text-center space-y-2">
+              <h2 className="text-4xl font-medium text-white">
+                {isConnected ? (aiSpeaking ? "DevTech hablando..." : "Escuchando...") : "Listo para iniciar"}
+              </h2>
+              <p className="text-lg text-slate-400">
+                {isConnected ? "Hable libremente para comenzar" : "Conéctese para hablar con la IA"}
+              </p>
+            </div>
+
+            {/* Main Button */}
+            <button
+              onClick={isConnected ? handleDisconnect : connectToLive}
+              className={`
+                relative group flex items-center justify-center w-24 h-24 rounded-full transition-all duration-300 shadow-2xl
+                ${isConnected 
+                  ? 'bg-red-500 hover:bg-red-600 shadow-red-900/40' 
+                  : 'bg-devtech-600 hover:bg-devtech-500 shadow-devtech-900/40'}
+              `}
+            >
+              {isConnected ? (
+                <StopCircle size={40} className="text-white" />
+              ) : (
+                <>
+                  <Mic size={40} className="text-white z-10" />
+                  <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:animate-ping"></div>
+                </>
+              )}
+            </button>
+
+            {/* Error display */}
+            {error && (
+              <div className="mt-8 max-w-md text-center p-4 bg-red-900/50 text-red-200 text-sm rounded-lg border border-red-800">
+                {error}
+              </div>
+            )}
+
+            {/* Logs */}
+            <div className="mt-8 w-full max-w-2xl">
+              <div className="text-sm text-slate-500 font-mono space-y-2 text-center">
+                {logs.slice(-3).map((log, i) => (
+                  <div key={i} className="opacity-75">&gt; {log}</div>
+                ))}
+                {logs.length === 0 && <div className="opacity-50">&gt; Esperando conexión...</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
