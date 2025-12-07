@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { Mic, MicOff, Server, Users, Bot, StopCircle, CheckCircle2, Terminal } from 'lucide-react';
-import { SYSTEM_INSTRUCTION, MODEL_NAME, VOICE_NAME } from './constants';
+import { Mic, MicOff, Server, Users, Bot, StopCircle, CheckCircle2, Terminal, Settings } from 'lucide-react';
+import { MODEL_NAME, VOICE_NAME } from './constants';
 import { createPcmBlob, base64ToBytes, decodeAudioData } from './utils/audioUtils';
+import { getSystemInstruction } from './utils/systemInstruction';
 import Visualizer from './components/Visualizer';
 
 // Helper to safely get the API key in both Vite (Browser) and Node (Playground) environments
@@ -102,6 +103,7 @@ const App: React.FC = () => {
       const ai = new GoogleGenAI({ apiKey });
 
       // 4. Connect to Live Session
+      const systemInstruction = getSystemInstruction();
       const sessionPromise = ai.live.connect({
         model: MODEL_NAME,
         config: {
@@ -109,7 +111,7 @@ const App: React.FC = () => {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE_NAME } },
           },
-          systemInstruction: SYSTEM_INSTRUCTION,
+          systemInstruction,
         },
         callbacks: {
           onopen: () => {
@@ -230,6 +232,14 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
+             <a
+               href="/systeminstruction"
+               className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600 text-sm transition-colors"
+               title="Configurar System Instruction"
+             >
+               <Settings size={16} />
+               <span className="hidden sm:inline">Configurar</span>
+             </a>
              {isConnected ? (
                  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-900/50 text-emerald-400 border border-emerald-800 text-sm">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
