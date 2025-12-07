@@ -70,11 +70,7 @@ const App: React.FC = () => {
       addLog("Micrófono accedido correctamente.");
 
       // 3. Initialize Gemini Client
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('GEMINI_API_KEY no está configurada. Configúrala en Cloudflare Pages.');
-      }
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
       // 4. Connect to Live Session
       const sessionPromise = ai.live.connect({
@@ -91,7 +87,7 @@ const App: React.FC = () => {
             addLog("Sesión de DevTech conectada.");
             setIsConnected(true);
             
-            // Start streaming input audio
+            // Stream audio from the microphone to the model.
             if (!inputAudioContextRef.current || !mediaStreamRef.current) return;
 
             inputSourceRef.current = inputAudioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
@@ -101,7 +97,7 @@ const App: React.FC = () => {
               const inputData = e.inputBuffer.getChannelData(0);
               const pcmBlob = createPcmBlob(inputData);
               
-              // Send to Gemini
+              // CRITICAL: Solely rely on sessionPromise resolves and then call `session.sendRealtimeInput`
               sessionPromise.then(session => {
                 session.sendRealtimeInput({ media: pcmBlob });
               });
@@ -183,14 +179,10 @@ const App: React.FC = () => {
 
   const handleDisconnect = () => {
     if (sessionRef.current) {
-        // There isn't an explicit close method on the session object returned by promise in the simplified types,
-        // but often the client handles it or we just stop sending data. 
-        // We will force cleanup locally.
         addLog("Desconectando...");
         cleanupAudio();
         setIsConnected(false);
         sessionRef.current = null;
-        // In a real scenario, we might trigger a close message if the SDK supports it explicitly exposed
     }
   };
 
@@ -330,9 +322,9 @@ const App: React.FC = () => {
                 <div className="mt-6 border-t border-slate-700 pt-4 h-24 overflow-hidden">
                     <div className="text-xs text-slate-500 font-mono space-y-1">
                         {logs.map((log, i) => (
-                            <div key={i} className="truncate">&gt; {log}</div>
+                            <div key={i} className="truncate">> {log}</div>
                         ))}
-                        {logs.length === 0 && <div className="opacity-50">&gt; Esperando conexión...</div>}
+                        {logs.length === 0 && <div className="opacity-50">> Esperando conexión...</div>}
                     </div>
                 </div>
             </div>

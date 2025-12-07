@@ -1,8 +1,0 @@
-name = "devtech-asistente"
-compatibility_date = "2024-12-07"
-pages_build_output_dir = "dist"
-
-# Variables de entorno para desarrollo local
-[vars]
-# GEMINI_API_KEY se debe configurar como secret en Cloudflare Dashboard
-# o usando: wrangler pages secret put GEMINI_API_KEY

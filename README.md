@@ -2,61 +2,19 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# DevTech AI Consultant
+# Run and deploy your AI Studio app
 
-Aplicación de consultoría de IA con conversación por voz en tiempo real usando Google Gemini.
+This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1gefo226pXJ0Kwy512ae-uFCs_q0e5ohc
 
-## 🚀 Despliegue
+## Run Locally
 
-### Cloudflare Pages (Recomendado)
+**Prerequisites:**  Node.js
 
-Para desplegar en Cloudflare Pages, consulta la guía completa: [DEPLOY_CLOUDFLARE.md](./DEPLOY_CLOUDFLARE.md)
 
-**Despliegue rápido:**
-```bash
-npm install -g wrangler
-wrangler login
-npm run deploy
-```
-
-### Vercel
-
-Para desplegar en Vercel:
-```bash
-npm install -g vercel
-vercel
-```
-
-## 💻 Desarrollo Local
-
-**Requisitos:** Node.js 20+
-
-1. Instalar dependencias:
-   ```bash
-   npm install
-   ```
-
-2. Configurar variable de entorno:
-   - Crea archivo `.env.local`
-   - Agrega: `VITE_GEMINI_API_KEY=tu_api_key_aqui`
-   - Obtén tu API key en: https://aistudio.google.com
-
-3. Ejecutar en desarrollo:
-   ```bash
-   npm run dev
-   ```
-
-4. Abrir en el navegador:
-   ```
-   http://localhost:3000
-   ```
-
-## 📦 Scripts disponibles
-
-- `npm run dev` - Servidor de desarrollo
-- `npm run build` - Build de producción
-- `npm run preview` - Preview del build
-- `npm run deploy` - Desplegar a Cloudflare Pages
-- `npm run cf:dev` - Desarrollo local con Wrangler
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
