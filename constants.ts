@@ -22,5 +22,5 @@ Protocolo de Reunión:
 Mantén las respuestas concisas y naturales para una conversación fluida por voz.
 `;
 
-export const MODEL_NAME = 'gemini-2.5-flash-native-audio-preview-09-2025';
+export const MODEL_NAME = 'gemini-2.0-flash-exp';
 export const VOICE_NAME = 'Charon'; // Deep, professional voice
